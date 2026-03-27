@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>⚡ DODGE BLITZ</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020810; --panel: #060d1a; --border: #0d2040;
+    --accent: #00e5ff; --accent2: #ff3d71; --accent3: #a259ff;
+    --gold: #ffd700; --silver: #c0c0c0; --bronze: #cd7f32;
+    --text: #e0f0ff; --dim: #4a7090;
+    --glow: 0 0 20px rgba(0,229,255,0.4);
+    --glow2: 0 0 20px rgba(255,61,113,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh; overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .stars { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
+  .star { position: absolute; background: white; border-radius: 50%; animation: twinkle linear infinite; }
+  @keyframes twinkle { 0%,100%{opacity:.1} 50%{opacity:1} }
+  .grid-bg {
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: linear-gradient(rgba(0,229,255,.03) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(0,229,255,.03) 1px,transparent 1px);
+    background-size: 50px 50px;
+  }
+  #app {
+    position: relative; z-index: 1;
+    width: 100vw; height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .screen {
+    display: none; width: 100%; height: 100%;
+    align-items: center; justify-content: center; flex-direction: column;
+  }
+  .screen.active { display: flex; }
+
+  /* LOGIN */
+  #loginScreen { flex-direction: row; gap: 24px; align-items: center; justify-content: center; }
+
+  .login-container {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 2px; padding: 48px 52px; width: 400px;
+    position: relative; overflow: hidden; flex-shrink: 0;
+  }
+  .login-container::before {
+    content:''; position:absolute; top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,var(--accent3),var(--accent),var(--accent2));
+  }
+  .login-container::after {
+    content:''; position:absolute; inset:0;
+    background:radial-gradient(ellipse at 50% -20%,rgba(0,229,255,.06) 0%,transparent 70%);
+    pointer-events:none;
+  }
+
+  .login-lb-panel {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: 2px; padding: 28px 22px; width: 240px;
+    position: relative; overflow: hidden; flex-shrink: 0;
+    align-self: stretch; display: flex; flex-direction: column;
+  }
+  .login-lb-panel::before {
+    content:''; position:absolute; top:0;left:0;right:0;height:2px;
+    background:linear-gradient(90deg,var(--accent3),var(--accent));
+  }
+
+  .logo { text-align: center; margin-bottom: 36px; }
+  .logo-main {
+    font-family:'Orbitron',sans-serif; font-size:38px; font-weight:900; letter-spacing:6px;
+    background:linear-gradient(135deg,var(--accent),var(--accent3));
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    filter:drop-shadow(0 0 20px rgba(0,229,255,.5));
+  }
+  .logo-sub { font-size:11px; letter-spacing:5px; color:var(--dim); text-transform:uppercase; margin-top:6px; }
+
+  .input-group { margin-bottom: 10px; }
+  .input-label { display:block; font-size:11px; letter-spacing:3px; color:var(--dim); text-transform:uppercase; margin-bottom:10px; }
+  .input-field {
+    width:100%; background:rgba(0,229,255,.04); border:1px solid var(--border);
+    border-radius:2px; color:var(--text); font-family:'Rajdhani',sans-serif;
+    font-size:18px; font-weight:600; padding:14px 18px; outline:none;
+    transition:border-color .2s,box-shadow .2s; letter-spacing:1px;
+  }
+  .input-field:focus { border-color:var(--accent); box-shadow:var(--glow),inset 0 0 20px rgba(0,229,255,.05); }
+  .input-field::placeholder { color:var(--dim); opacity:.5; }
+  .input-error { font-size:12px; letter-spacing:.5px; color:var(--accent2); margin-top:8px; min-height:18px; display:block; }
+
+  .btn-primary {
+    width:100%; background:transparent; border:1px solid var(--accent); border-radius:2px;
+    color:var(--accent); font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700;
+    letter-spacing:4px; text-transform:uppercase; padding:16px; cursor:pointer;
+    position:relative; overflow:hidden; transition:all .3s; margin-top:16px;
+  }
+  .btn-primary::before {
+    content:''; position:absolute; inset:0; background:var(--accent);
+    transform:translateX(-100%); transition:transform .3s; z-index:-1;
+  }
+  .btn-primary:hover { color:var(--bg); box-shadow:var(--glow); }
+  .btn-primary:hover::before { transform:translateX(0); }
+  .btn-primary:disabled { opacity:.4; cursor:not-allowed; }
+  .btn-primary:disabled::before { display:none; }
+
+  /* GAME SCREEN */
+  #gameScreen { flex-direction:row; gap:20px; padding:20px; align-items:flex-start; justify-content:center; }
+  .side-panel { width:200px; display:flex; flex-direction:column; gap:16px; flex-shrink:0; }
+  .panel-card { background:var(--panel); border:1px solid var(--border); border-radius:2px; padding:20px; position:relative; overflow:hidden; }
+  .panel-card::before { content:''; position:absolute; top:0;left:0;width:2px;height:100%; background:var(--accent); opacity:.5; }
+  .panel-label { font-size:10px; letter-spacing:3px; color:var(--dim); text-transform:uppercase; margin-bottom:8px; }
+  .panel-value { font-family:'Orbitron',sans-serif; font-size:28px; font-weight:900; color:var(--accent); line-height:1; }
+  .player-badge { display:flex; align-items:center; gap:10px; }
+  .player-icon { width:36px;height:36px; background:linear-gradient(135deg,var(--accent3),var(--accent)); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+  .player-name { font-family:'Orbitron',sans-serif; font-size:13px; font-weight:700; color:var(--text); letter-spacing:1px; word-break:break-all; }
+
+  .canvas-wrapper { position:relative; }
+  #gameCanvas { display:block; border:1px solid var(--border); border-radius:2px; box-shadow:0 0 40px rgba(0,229,255,.08); background:#030b14; }
+
+  .canvas-overlay {
+    position:absolute; inset:0; display:flex; align-items:center;
+    justify-content:center; flex-direction:column;
+    background:rgba(2,8,16,.88); border-radius:2px; gap:16px;
+  }
+  .canvas-overlay.hidden { display:none; }
+  .overlay-title {
+    font-family:'Orbitron',sans-serif; font-size:36px; font-weight:900;
+    letter-spacing:4px; color:var(--accent);
+    filter:drop-shadow(0 0 20px rgba(0,229,255,.6)); text-align:center; white-space:pre-line;
+  }
+  .overlay-title.gameover { color:var(--accent2); filter:drop-shadow(0 0 20px rgba(255,61,113,.6)); }
+  .overlay-score { font-family:'Orbitron',sans-serif; font-size:18px; color:var(--dim); letter-spacing:2px; }
+  .overlay-score span { color:var(--gold); font-weight:700; }
+  .overlay-btn {
+    margin-top:8px; background:transparent; border:1px solid var(--accent2);
+    color:var(--accent2); font-family:'Orbitron',sans-serif; font-size:11px;
+    font-weight:700; letter-spacing:4px; padding:14px 32px; cursor:pointer;
+    position:relative; overflow:hidden; transition:all .3s; border-radius:2px;
+  }
+  .overlay-btn::before { content:''; position:absolute; inset:0; background:var(--accent2); transform:translateX(-100%); transition:transform .3s; z-index:-1; }
+  .overlay-btn:hover { color:white; box-shadow:var(--glow2); }
+  .overlay-btn:hover::before { transform:translateX(0); }
+  .start-hint { font-size:13px; letter-spacing:3px; color:var(--dim); text-transform:uppercase; animation:blink 1.4s ease-in-out infinite; }
+  @keyframes blink { 0%,100%{opacity:.3} 50%{opacity:1} }
+
+  /* LEADERBOARD shared */
+  .lb-title { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; letter-spacing:3px; color:var(--dim); text-transform:uppercase; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+  .lb-dot { width:6px;height:6px; background:var(--accent); border-radius:50%; animation:pulse 2s infinite; box-shadow:0 0 8px var(--accent); flex-shrink:0; }
+  @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.7)} }
+  .lb-list { display:flex; flex-direction:column; gap:6px; flex:1; overflow-y:auto; }
+  .lb-item { display:flex; align-items:center; gap:8px; padding:9px 10px; background:rgba(0,229,255,.03); border:1px solid transparent; border-radius:2px; position:relative; overflow:hidden; }
+  .lb-item.me { border-color:rgba(0,229,255,.3); background:rgba(0,229,255,.06); }
+  .lb-item.me::after { content:'◀'; position:absolute; right:7px; font-size:9px; color:var(--accent); opacity:.6; }
+  .lb-rank { font-family:'Orbitron',sans-serif; font-size:12px; font-weight:900; width:20px; text-align:center; flex-shrink:0; }
+  .lb-rank.r1 { color:var(--gold); filter:drop-shadow(0 0 6px rgba(255,215,0,.6)); }
+  .lb-rank.r2 { color:var(--silver); }
+  .lb-rank.r3 { color:var(--bronze); }
+  .lb-rank.rn { color:var(--dim); font-size:10px; }
+  .lb-name { flex:1; font-size:12px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lb-score { font-family:'Orbitron',sans-serif; font-size:11px; font-weight:700; color:var(--accent); flex-shrink:0; }
+  .lb-empty { text-align:center; color:var(--dim); font-size:12px; letter-spacing:2px; padding:20px 0; }
+
+  .leaderboard-panel { width:210px; background:var(--panel); border:1px solid var(--border); border-radius:2px; padding:20px; flex-shrink:0; position:relative; overflow:hidden; }
+  .leaderboard-panel::before { content:''; position:absolute; top:0;left:0;right:0;height:2px; background:linear-gradient(90deg,var(--accent3),var(--accent)); }
+
+  .controls-hint { display:flex; gap:8px; align-items:center; justify-content:center; margin-top:8px; }
+  .key-badge { background:rgba(0,229,255,.08); border:1px solid var(--border); border-radius:2px; padding:4px 10px; font-family:'Orbitron',sans-serif; font-size:10px; color:var(--dim); letter-spacing:1px; }
+  .level-bar-wrap { margin-top:8px; }
+  .level-bar-bg { height:3px; background:var(--border); border-radius:2px; overflow:hidden; margin-top:6px; }
+  .level-bar-fill { height:100%; background:linear-gradient(90deg,var(--accent3),var(--accent)); border-radius:2px; transition:width .3s; }
+
+  @media (max-width:960px) {
+    #loginScreen { flex-direction:column; overflow-y:auto; padding:20px; }
+    .login-lb-panel { width:400px; align-self:auto; }
+    #gameScreen { flex-direction:column; align-items:center; padding:10px; gap:10px; }
+    .side-panel { flex-direction:row; width:auto; flex-wrap:wrap; }
+    .leaderboard-panel { width:100%; }
+    #gameCanvas { width:340px; height:480px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="stars" id="stars"></div>
+<div class="grid-bg"></div>
+
+<div id="app">
+  <!-- LOGIN SCREEN -->
+  <div class="screen active" id="loginScreen">
+    <div class="login-container">
+      <div class="logo">
+        <div class="logo-main">DODGE<br>BLITZ</div>
+        <div class="logo-sub">장애물 회피 게임</div>
+      </div>
+      <div class="input-group">
+        <label class="input-label" for="nameInput">플레이어 이름</label>
+        <input class="input-field" id="nameInput" type="text" placeholder="이름을 입력하세요" maxlength="12" autocomplete="off">
+        <span class="input-error" id="loginError"></span>
+      </div>
+      <button class="btn-primary" id="loginBtn">게임 시작</button>
+    </div>
+
+    <div class="login-lb-panel">
+      <div class="lb-title"><div class="lb-dot"></div>LEADERBOARD</div>
+      <div class="lb-list" id="loginLeaderboard">
+        <div class="lb-empty">로딩중...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div class="screen" id="gameScreen">
+    <div class="side-panel">
+      <div class="panel-card">
+        <div class="player-badge">
+          <div class="player-icon">⚡</div>
+          <div class="player-name" id="displayName">PLAYER</div>
+        </div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-label">SCORE</div>
+        <div class="panel-value" id="scoreDisplay">0</div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-label">BEST</div>
+        <div class="panel-value" id="bestDisplay">0</div>
+      </div>
+      <div class="panel-card">
+        <div class="panel-label">LEVEL</div>
+        <div class="panel-value" id="levelDisplay">1</div>
+        <div class="level-bar-wrap">
+          <div class="level-bar-bg"><div class="level-bar-fill" id="levelBar" style="width:0%"></div></div>
+        </div>
+      </div>
+      <div class="controls-hint">
+        <div class="key-badge">◀</div>
+        <div class="key-badge" style="font-size:9px">MOVE</div>
+        <div class="key-badge">▶</div>
+      </div>
+    </div>
+
+    <div class="canvas-wrapper">
+      <canvas id="gameCanvas" width="380" height="580"></canvas>
+      <div class="canvas-overlay" id="overlay">
+        <div class="overlay-title" id="overlayTitle">DODGE
+BLITZ</div>
+        <div class="overlay-score" id="overlayScore" style="display:none">
+          SCORE: <span id="finalScore">0</span>
+        </div>
+        <button class="overlay-btn" id="startBtn">▶ START</button>
+        <div class="start-hint" id="startHint">PRESS TO BEGIN</div>
+      </div>
+    </div>
+
+    <div class="leaderboard-panel">
+      <div class="lb-title"><div class="lb-dot"></div>LEADERBOARD</div>
+      <div class="lb-list" id="gameLeaderboard">
+        <div class="lb-empty">로딩중...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, onValue, query, orderByChild, limitToLast }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ===== FIREBASE CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyBLR2lb_Vwt-0t-KHr5NoB2mtGwD5RU0No",
+  authDomain: "avoid-it-563ac.firebaseapp.com",
+  databaseURL: "https://avoid-it-563ac-default-rtdb.firebaseio.com",
+  projectId: "avoid-it-563ac",
+  storageBucket: "avoid-it-563ac.firebasestorage.app",
+  messagingSenderId: "669078099016",
+  appId: "1:669078099016:web:a22b2e24c8e7e904a0f47d",
+  measurementId: "G-E7P6R6HNH8"
+};
+// ===========================
+
+let db = null, firebaseOk = false;
+try {
+  const app = initializeApp(firebaseConfig);
+  db = getDatabase(app);
+  firebaseOk = true;
+} catch(e) { console.warn("Firebase 초기화 실패:", e); }
+
+// Stars
+(function(){
+  const c = document.getElementById('stars');
+  for(let i=0;i<80;i++){
+    const s = document.createElement('div'); s.className='star';
+    const sz = Math.random()*2+.5;
+    s.style.cssText=`width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-duration:${2+Math.random()*4}s;animation-delay:${Math.random()*4}s`;
+    c.appendChild(s);
+  }
+})();
+
+// State
+let playerName='', score=0, bestScore=0, level=1, gameRunning=false, animId=null;
+const canvas=document.getElementById('gameCanvas'), ctx=canvas.getContext('2d');
+const W=canvas.width, H=canvas.height;
+const PLAYER_W=36, PLAYER_H=44, SPEED=5;
+let player={x:W/2,y:H-80,vx:0};
+let obstacles=[], particles=[];
+let lastTime=0, spawnTimer=0, spawnInterval=1400, scoreTimer=0;
+let keys={left:false,right:false};
+
+// Events
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('nameInput').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+document.getElementById('startBtn').addEventListener('click', startGame);
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft'){keys.left=true;e.preventDefault();}
+  if(e.key==='ArrowRight'){keys.right=true;e.preventDefault();}
+  if((e.key===' '||e.key==='Enter')&&!gameRunning) startGame();
+});
+document.addEventListener('keyup', e=>{
+  if(e.key==='ArrowLeft') keys.left=false;
+  if(e.key==='ArrowRight') keys.right=false;
+});
+let touchStartX=null;
+canvas.addEventListener('touchstart', e=>{touchStartX=e.touches[0].clientX;},{passive:true});
+canvas.addEventListener('touchmove', e=>{
+  if(touchStartX===null) return;
+  const dx=e.touches[0].clientX-touchStartX;
+  if(dx<-10){keys.left=true;keys.right=false;}
+  else if(dx>10){keys.right=true;keys.left=false;}
+  e.preventDefault();
+},{passive:false});
+canvas.addEventListener('touchend',()=>{keys.left=false;keys.right=false;touchStartX=null;});
+
+// Firebase key: encodeURIComponent so Korean & special chars are safe
+function sanitizeKey(name){ return encodeURIComponent(name.trim()).substring(0,80)||'player'; }
+
+// Dev mode
+let devMode = false;
+const DEV_NAME = '윤서';
+const DEV_SCORE_MULT = 6;
+const DEV_SCORE_CAP = 4569;
+
+// Login with duplicate check
+async function doLogin(){
+  const val=document.getElementById('nameInput').value.trim();
+  const errEl=document.getElementById('loginError');
+  const btn=document.getElementById('loginBtn');
+  if(!val){ showInputError('이름을 입력해주세요.'); return; }
+  btn.disabled=true; btn.textContent='확인중...'; errEl.textContent='';
+
+  devMode = (val === DEV_NAME);
+
+  if(firebaseOk && !devMode){
+    try{
+      const key=sanitizeKey(val);
+      const snap=await get(ref(db,`scores/${key}`));
+      if(snap.exists()){
+        btn.disabled=false; btn.textContent='게임 시작';
+        showInputError('이미 사용 중인 이름입니다. 다른 이름을 입력해주세요.');
+        return;
+      }
+    }catch(e){ console.warn('Name check error:',e); }
+  }
+
+  playerName=val;
+  btn.disabled=false; btn.textContent='게임 시작';
+  document.getElementById('displayName').textContent=playerName.toUpperCase();
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('gameScreen').classList.add('active');
+  drawIdle();
+}
+
+function showInputError(msg){
+  document.getElementById('loginError').textContent=msg;
+  const inp=document.getElementById('nameInput');
+  inp.style.borderColor='var(--accent2)'; inp.style.boxShadow='var(--glow2)';
+  setTimeout(()=>{ inp.style.borderColor=''; inp.style.boxShadow=''; },1000);
+}
+
+// Game
+function startGame(){
+  score=0; level=1; obstacles=[]; particles=[];
+  spawnInterval=1400; spawnTimer=0; scoreTimer=0;
+  player={x:W/2,y:H-80,vx:0}; keys={left:false,right:false};
+  updateHUD();
+  document.getElementById('overlay').classList.add('hidden');
+  gameRunning=true; lastTime=performance.now();
+  if(animId) cancelAnimationFrame(animId);
+  animId=requestAnimationFrame(gameLoop);
+}
+
+function gameLoop(ts){
+  const dt=Math.min(ts-lastTime,50); lastTime=ts;
+  update(dt); draw();
+  if(gameRunning) animId=requestAnimationFrame(gameLoop);
+}
+
+function update(dt){
+  if(keys.left) player.vx=Math.max(player.vx-1.2,-SPEED);
+  else if(keys.right) player.vx=Math.min(player.vx+1.2,SPEED);
+  else player.vx*=.8;
+  player.x=Math.max(PLAYER_W/2,Math.min(W-PLAYER_W/2,player.x+player.vx));
+
+  scoreTimer+=dt;
+  const scoreInterval = devMode ? Math.floor(100/DEV_SCORE_MULT) : 100;
+  while(scoreTimer >= scoreInterval){
+    scoreTimer -= scoreInterval;
+    if(devMode){
+      if(score < DEV_SCORE_CAP){ score++; }
+    } else {
+      score++;
+    }
+  }
+  document.getElementById('scoreDisplay').textContent=score;
+
+  const nl=1+Math.floor(score/50);
+  if(nl!==level){ level=nl; document.getElementById('levelDisplay').textContent=level; spawnInterval=Math.max(500,1400-level*90); }
+  document.getElementById('levelBar').style.width=((score%50)/50*100)+'%';
+
+  // Dev mode cap: auto end game at DEV_SCORE_CAP
+  if(devMode && score>=DEV_SCORE_CAP){ triggerDeath(); return; }
+
+  spawnTimer+=dt;
+  if(spawnTimer>=spawnInterval){ spawnTimer=0; spawnObstacle(); }
+
+  for(let i=obstacles.length-1;i>=0;i--){
+    const o=obstacles[i];
+    o.y+=o.speed*(dt/16);
+    if(o.y>H+60){ obstacles.splice(i,1); continue; }
+    if(Math.abs(player.x-o.x)<(PLAYER_W/2+o.w/2-4)&&Math.abs((player.y-PLAYER_H/2)-(o.y-o.h/2))<(PLAYER_H/2+o.h/2-6)){ triggerDeath(); return; }
+  }
+
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx; p.y+=p.vy; p.vy+=.15; p.life-=dt/600;
+    if(p.life<=0) particles.splice(i,1);
+  }
+
+  if(Math.random()<.3) particles.push({
+    x:player.x+(Math.random()-.5)*10, y:player.y+PLAYER_H/2,
+    vx:(Math.random()-.5), vy:Math.random()*1.5+.5,
+    life:1, r:Math.random()*3+1,
+    color:Math.random()>.5?'0,229,255':'162,89,255'
+  });
+}
+
+function spawnObstacle(){
+  const types=[{w:50,h:16,color:'#ff3d71',glow:'255,61,113'},{w:30,h:30,color:'#a259ff',glow:'162,89,255'},{w:70,h:12,color:'#ff9f43',glow:'255,159,67'}];
+  const t=types[Math.floor(Math.random()*types.length)];
+  obstacles.push({x:t.w/2+Math.random()*(W-t.w),y:-20,w:t.w,h:t.h,speed:(2.5+level*.5)+Math.random()*1.5,color:t.color,glow:t.glow});
+}
+
+function triggerDeath(){
+  gameRunning=false;
+  for(let i=0;i<24;i++){
+    const a=Math.random()*Math.PI*2, spd=Math.random()*6+2;
+    particles.push({x:player.x,y:player.y,vx:Math.cos(a)*spd,vy:Math.sin(a)*spd,life:1,r:Math.random()*5+2,color:i%2===0?'0,229,255':'255,61,113'});
+  }
+  draw();
+  if(score>bestScore){ bestScore=score; document.getElementById('bestDisplay').textContent=bestScore; }
+  saveScore(playerName,score);
+  const ot=document.getElementById('overlayTitle');
+  ot.textContent='GAME\nOVER'; ot.className='overlay-title gameover';
+  document.getElementById('overlayScore').style.display='block';
+  document.getElementById('finalScore').textContent=score;
+  document.getElementById('startBtn').textContent='▶ RETRY';
+  document.getElementById('startHint').textContent='TRY AGAIN';
+  document.getElementById('overlay').classList.remove('hidden');
+}
+
+// Draw
+function drawIdle(){ ctx.clearRect(0,0,W,H); drawBackground(); drawPlayer(); }
+function draw(){ ctx.clearRect(0,0,W,H); drawBackground(); drawParticles(); drawObstacles(); drawPlayer(); }
+
+function drawBackground(){
+  for(let y=0;y<H;y+=4){ ctx.fillStyle='rgba(0,0,0,.06)'; ctx.fillRect(0,y,W,1); }
+  const g=ctx.createLinearGradient(0,H-80,0,H);
+  g.addColorStop(0,'transparent'); g.addColorStop(1,'rgba(0,229,255,.04)');
+  ctx.fillStyle=g; ctx.fillRect(0,H-80,W,80);
+}
+
+function drawPlayer(){
+  ctx.save(); ctx.translate(player.x,player.y);
+  const eg=ctx.createRadialGradient(0,PLAYER_H/2,0,0,PLAYER_H/2,20);
+  eg.addColorStop(0,'rgba(0,229,255,.4)'); eg.addColorStop(1,'rgba(0,229,255,0)');
+  ctx.fillStyle=eg; ctx.fillRect(-20,PLAYER_H/2-10,40,30);
+  ctx.fillStyle='#0a1a2e'; ctx.strokeStyle='#00e5ff'; ctx.lineWidth=1.5; ctx.shadowColor='#00e5ff'; ctx.shadowBlur=12;
+  ctx.beginPath(); ctx.moveTo(0,-PLAYER_H/2); ctx.lineTo(PLAYER_W/2,PLAYER_H/2); ctx.lineTo(PLAYER_W/2-8,PLAYER_H/2-8); ctx.lineTo(0,PLAYER_H/2-18); ctx.lineTo(-(PLAYER_W/2-8),PLAYER_H/2-8); ctx.lineTo(-PLAYER_W/2,PLAYER_H/2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='rgba(0,229,255,.3)'; ctx.shadowBlur=0;
+  ctx.beginPath(); ctx.ellipse(0,-4,7,12,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='rgba(0,229,255,.12)'; ctx.strokeStyle='rgba(0,229,255,.4)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(-PLAYER_W/2,PLAYER_H/2); ctx.lineTo(-PLAYER_W/2-12,4); ctx.lineTo(-10,2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PLAYER_W/2,PLAYER_H/2); ctx.lineTo(PLAYER_W/2+12,4); ctx.lineTo(10,2); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.restore();
+}
+
+function drawObstacles(){
+  obstacles.forEach(o=>{
+    ctx.save(); ctx.translate(o.x,o.y);
+    ctx.shadowColor=`rgb(${o.glow})`; ctx.shadowBlur=14;
+    ctx.strokeStyle=o.color; ctx.fillStyle=o.color+'22'; ctx.lineWidth=2;
+    const hw=o.w/2,hh=o.h/2;
+    ctx.strokeRect(-hw,-hh,o.w,o.h); ctx.fillRect(-hw,-hh,o.w,o.h);
+    ctx.strokeStyle=`rgba(${o.glow},.4)`; ctx.lineWidth=1;
+    ctx.strokeRect(-hw+4,-hh+4,o.w-8,o.h-8); ctx.restore();
+  });
+}
+
+function drawParticles(){
+  particles.forEach(p=>{
+    ctx.save(); ctx.globalAlpha=Math.max(0,p.life*.8);
+    ctx.fillStyle=`rgb(${p.color})`; ctx.shadowColor=`rgb(${p.color})`; ctx.shadowBlur=8;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r*p.life,0,Math.PI*2); ctx.fill(); ctx.restore();
+  });
+}
+
+function updateHUD(){
+  document.getElementById('scoreDisplay').textContent=score;
+  document.getElementById('levelDisplay').textContent=level;
+}
+
+// Firebase save
+async function saveScore(name,s){
+  if(!firebaseOk) return;
+  try{
+    const key=sanitizeKey(name);
+    const snap=await get(ref(db,`scores/${key}`));
+    if(!snap.exists()||snap.val().score<s)
+      await set(ref(db,`scores/${key}`),{name,score:s,ts:Date.now()});
+  }catch(e){ console.warn('Save error:',e); }
+}
+
+// ── MIGRATION: rebuild any malformed keys on first load ──────────────────
+async function migrateScores(){
+  if(!firebaseOk) return;
+  try{
+    const snap = await get(ref(db,'scores'));
+    if(!snap.exists()) return;
+    const promises = [];
+    snap.forEach(child => {
+      const data = child.val();
+      const storedKey = child.key;
+      // A properly encoded key for the stored name
+      const correctKey = sanitizeKey(data.name || '');
+      if(storedKey !== correctKey && data.name){
+        // Read existing correct-key entry (if any) to keep higher score
+        promises.push(
+          get(ref(db,`scores/${correctKey}`)).then(existing => {
+            const existingScore = existing.exists() ? existing.val().score : -1;
+            const writes = [];
+            if(data.score > existingScore){
+              writes.push(set(ref(db,`scores/${correctKey}`), {name:data.name, score:data.score, ts:data.ts||Date.now()}));
+            }
+            // Remove the bad key
+            writes.push(set(ref(db,`scores/${storedKey}`), null));
+            return Promise.all(writes);
+          })
+        );
+      }
+    });
+    await Promise.all(promises);
+    if(promises.length) console.log(`Migration: fixed ${promises.length} entries`);
+  }catch(e){ console.warn('Migration error:',e); }
+}
+
+// Leaderboard — subscribe once, update both panels (no limitToLast so all entries show)
+function subscribeLeaderboard(){
+  if(!firebaseOk){
+    renderLB('loginLeaderboard',[]); renderLB('gameLeaderboard',[]); return;
+  }
+  try{
+    // Read ALL scores, sort client-side, show top 10
+    onValue(ref(db,'scores'), snap=>{
+      const items=[];
+      snap.forEach(c=>{
+        const v=c.val();
+        if(v && v.name && typeof v.score==='number') items.push(v);
+      });
+      items.sort((a,b)=>b.score-a.score);
+      renderLB('loginLeaderboard', items.slice(0,10));
+      renderLB('gameLeaderboard',  items.slice(0,10));
+    }, err=>{
+      console.warn('Leaderboard error:',err);
+      renderLB('loginLeaderboard',[]); renderLB('gameLeaderboard',[]);
+    });
+  }catch(e){ renderLB('loginLeaderboard',[]); renderLB('gameLeaderboard',[]); }
+}
+
+function renderLB(elId,items){
+  const el=document.getElementById(elId); if(!el) return;
+  if(!items.length){ el.innerHTML='<div class="lb-empty">기록 없음</div>'; return; }
+  el.innerHTML=items.map((item,i)=>{
+    const rank=i+1;
+    const rc=rank===1?'r1':rank===2?'r2':rank===3?'r3':'rn';
+    const rs=rank<=3?['🥇','🥈','🥉'][rank-1]:rank;
+    const isMe=playerName&&item.name===playerName?' me':'';
+    return `<div class="lb-item${isMe}">
+      <div class="lb-rank ${rc}">${rs}</div>
+      <div class="lb-name">${esc(item.name)}</div>
+      <div class="lb-score">${item.score}</div>
+    </div>`;
+  }).join('');
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// Start: migrate old data first, then subscribe
+migrateScores().then(()=>{ subscribeLeaderboard(); });
+setTimeout(drawIdle,100);
+</script>
+</body>
+</html>
